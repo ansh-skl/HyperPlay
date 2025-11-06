@@ -13,7 +13,6 @@ window.addEventListener("resize", () => {
   canvas.height = height;
 });
 
-// Game variables
 let level = 1;
 let speed = 5;
 let roadY = 0;
@@ -21,30 +20,31 @@ let blueLives = 3;
 let redLives = 3;
 let finished = false;
 let traffic = [];
-let keys = {};
-
-const lanes = 4;
-let laneWidth, roadWidth, roadX;
-function updateRoad() {
-  laneWidth = width / 2.5 / lanes;
-  roadWidth = laneWidth * lanes;
-  roadX = (width - roadWidth) / 2;
-}
-updateRoad();
-
-const blue = { x: 0, y: 0, w: 50, h: 80, color: "blue" };
-const red = { x: 0, y: 0, w: 50, h: 80, color: "red" };
-resetPlayers();
+const keys = {};
 
 document.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
 document.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
+const lanes = 4;
+let laneWidth, roadWidth, roadX;
+
+function setupRoad() {
+  laneWidth = width / 2.5 / lanes;
+  roadWidth = laneWidth * lanes;
+  roadX = (width - roadWidth) / 2;
+}
+setupRoad();
+
+const blue = { x: 0, y: 0, w: 50, h: 80, color: "blue" };
+const red = { x: 0, y: 0, w: 50, h: 80, color: "red" };
+
 function resetPlayers() {
-  blue.x = roadX + laneWidth;
-  red.x = roadX + laneWidth * 2;
+  blue.x = roadX + laneWidth * 1 - blue.w / 2;
+  red.x = roadX + laneWidth * 2 - red.w / 2;
   blue.y = height - 150;
   red.y = height - 150;
 }
+resetPlayers();
 
 function resetTraffic() {
   traffic = [];
@@ -54,9 +54,9 @@ function resetTraffic() {
       y: Math.random() * -3000,
       w: 60,
       h: 120,
-      color: ["#777", "#999", "#444"][Math.floor(Math.random() * 3)]
+      color: ["#555", "#777", "#999"][Math.floor(Math.random() * 3)]
     };
-    car.x = roadX + car.lane * laneWidth + laneWidth / 4;
+    car.x = roadX + car.lane * laneWidth + laneWidth / 2 - car.w / 2;
     traffic.push(car);
   }
 }
@@ -99,10 +99,10 @@ function endGame() {
   msg.textContent = blueLives > redLives ? "🔵 Blue Wins!" : "🔴 Red Wins!";
   setTimeout(() => {
     msg.innerHTML += "<br><button onclick='restartGame()'>Play Again</button>";
-  }, 1000);
+  }, 800);
 }
 
-window.restartGame = function() {
+window.restartGame = function () {
   blueLives = 3;
   redLives = 3;
   level = 1;
@@ -116,14 +116,13 @@ window.restartGame = function() {
 };
 
 function drawRoad() {
-  const gradient = ctx.createLinearGradient(roadX, 0, roadX + roadWidth, 0);
-  gradient.addColorStop(0, "#222");
-  gradient.addColorStop(0.5, "#333");
-  gradient.addColorStop(1, "#222");
-  ctx.fillStyle = gradient;
+  const g = ctx.createLinearGradient(roadX, 0, roadX + roadWidth, 0);
+  g.addColorStop(0, "#222");
+  g.addColorStop(0.5, "#333");
+  g.addColorStop(1, "#222");
+  ctx.fillStyle = g;
   ctx.fillRect(roadX, 0, roadWidth, height);
 
-  // Lanes
   ctx.strokeStyle = "white";
   ctx.lineWidth = 4;
   ctx.setLineDash([30, 20]);
@@ -137,16 +136,11 @@ function drawRoad() {
   ctx.setLineDash([]);
 }
 
-function drawCar(p, color1, color2) {
-  // Main body
-  ctx.fillStyle = color1;
+function drawCar(p, body, accent) {
+  ctx.fillStyle = body;
   ctx.fillRect(p.x, p.y, p.w, p.h);
-
-  // Highlights and cockpit
-  ctx.fillStyle = color2;
+  ctx.fillStyle = accent;
   ctx.fillRect(p.x + 10, p.y + 10, p.w - 20, p.h - 20);
-
-  // Wheels
   ctx.fillStyle = "#111";
   ctx.fillRect(p.x - 5, p.y + 10, 10, 20);
   ctx.fillRect(p.x - 5, p.y + p.h - 30, 10, 20);
@@ -163,47 +157,34 @@ function gameLoop() {
   drawRoad();
 
   // Finish line
-  const finishLineY = -4000 + roadY;
-  if (finishLineY < height) {
+  const finishY = -4000 + roadY;
+  if (finishY < height) {
     for (let i = 0; i < 20; i++) {
-      ctx.fillStyle = i % 2 === 0 ? "#fff" : "#000";
-      ctx.fillRect(roadX + (i * (roadWidth / 20)), finishLineY, roadWidth / 20, 20);
+      ctx.fillStyle = i % 2 ? "#000" : "#fff";
+      ctx.fillRect(roadX + (i * (roadWidth / 20)), finishY, roadWidth / 20, 20);
     }
   }
 
   movePlayer(blue, "w", "s", "a", "d");
   movePlayer(red, "arrowup", "arrowdown", "arrowleft", "arrowright");
 
-  // Traffic update
-  for (let car of traffic) {
+  for (const car of traffic) {
     car.y += speed + 3;
     if (car.y > height) {
       car.y = Math.random() * -2000;
       car.lane = Math.floor(Math.random() * lanes);
-      car.x = roadX + car.lane * laneWidth + laneWidth / 4;
+      car.x = roadX + car.lane * laneWidth + laneWidth / 2 - car.w / 2;
     }
     ctx.fillStyle = car.color;
     ctx.fillRect(car.x, car.y, car.w, car.h);
     ctx.fillStyle = "#222";
     ctx.fillRect(car.x + 10, car.y + 10, car.w - 20, car.h - 20);
 
-    if (collide(blue, car)) {
-      blueLives--;
-      updateLives();
-      resetRound();
-    }
-    if (collide(red, car)) {
-      redLives--;
-      updateLives();
-      resetRound();
-    }
+    if (collide(blue, car)) { blueLives--; updateLives(); resetRound(); }
+    if (collide(red, car)) { redLives--; updateLives(); resetRound(); }
   }
 
-  // Player bump
-  if (collide(blue, red)) {
-    blue.x -= 20;
-    red.x += 20;
-  }
+  if (collide(blue, red)) { blue.x -= 20; red.x += 20; }
 
   drawCar(blue, "#007bff", "#00bfff");
   drawCar(red, "#ff3b3b", "#ff6666");
@@ -211,7 +192,6 @@ function gameLoop() {
   checkBoundaries(blue, true);
   checkBoundaries(red, false);
 
-  // Finish check
   if (blue.y < 0 && red.y < 0) {
     level++;
     speed += 1.5;
