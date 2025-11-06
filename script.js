@@ -6,9 +6,9 @@ const games = [
     file: "shooter/index.html"
   },
   {
-    title: "Racing Game",
+    title: "Road Rivals",
     img: "https://via.placeholder.com/300x200?text=Racing+Game",
-    file: "racing/index.html"
+    file: "games/roadrivals/index.html"
   },
   {
     title: "Puzzle Game",
