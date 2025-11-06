@@ -8,7 +8,7 @@ const games = [
   {
     title: "Road Rivals",
     img: "https://via.placeholder.com/300x200?text=Racing+Game",
-    file: "games/roadrivals/index.html"
+    file: "roadrivals/index.html"
   },
   {
     title: "Puzzle Game",
