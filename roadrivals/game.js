@@ -11,6 +11,8 @@ window.addEventListener("resize", () => {
   height = window.innerHeight;
   canvas.width = width;
   canvas.height = height;
+  setupRoad();
+  resetPlayers();
 });
 
 let level = 1;
@@ -34,6 +36,15 @@ function setupRoad() {
   roadX = (width - roadWidth) / 2;
 }
 setupRoad();
+
+// Load images
+const blueImg = new Image();
+const redImg = new Image();
+const trafficImg = new Image();
+
+blueImg.src = "https://opengameart.org/sites/default/files/car-blue.png";
+redImg.src = "https://opengameart.org/sites/default/files/car-red.png";
+trafficImg.src = "https://opengameart.org/sites/default/files/car-gray.png";
 
 const blue = { x: 0, y: 0, w: 50, h: 80, color: "blue" };
 const red = { x: 0, y: 0, w: 50, h: 80, color: "red" };
@@ -136,16 +147,8 @@ function drawRoad() {
   ctx.setLineDash([]);
 }
 
-function drawCar(p, body, accent) {
-  ctx.fillStyle = body;
-  ctx.fillRect(p.x, p.y, p.w, p.h);
-  ctx.fillStyle = accent;
-  ctx.fillRect(p.x + 10, p.y + 10, p.w - 20, p.h - 20);
-  ctx.fillStyle = "#111";
-  ctx.fillRect(p.x - 5, p.y + 10, 10, 20);
-  ctx.fillRect(p.x - 5, p.y + p.h - 30, 10, 20);
-  ctx.fillRect(p.x + p.w - 5, p.y + 10, 10, 20);
-  ctx.fillRect(p.x + p.w - 5, p.y + p.h - 30, 10, 20);
+function drawCar(p, img) {
+  ctx.drawImage(img, p.x, p.y, p.w, p.h);
 }
 
 function gameLoop() {
@@ -175,10 +178,7 @@ function gameLoop() {
       car.lane = Math.floor(Math.random() * lanes);
       car.x = roadX + car.lane * laneWidth + laneWidth / 2 - car.w / 2;
     }
-    ctx.fillStyle = car.color;
-    ctx.fillRect(car.x, car.y, car.w, car.h);
-    ctx.fillStyle = "#222";
-    ctx.fillRect(car.x + 10, car.y + 10, car.w - 20, car.h - 20);
+    ctx.drawImage(trafficImg, car.x, car.y, car.w, car.h);
 
     if (collide(blue, car)) { blueLives--; updateLives(); resetRound(); }
     if (collide(red, car)) { redLives--; updateLives(); resetRound(); }
@@ -186,8 +186,8 @@ function gameLoop() {
 
   if (collide(blue, red)) { blue.x -= 20; red.x += 20; }
 
-  drawCar(blue, "#007bff", "#00bfff");
-  drawCar(red, "#ff3b3b", "#ff6666");
+  drawCar(blue, blueImg);
+  drawCar(red, redImg);
 
   checkBoundaries(blue, true);
   checkBoundaries(red, false);
@@ -202,4 +202,11 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-gameLoop();
+// Start only after images are loaded
+let loaded = 0;
+[blueImg, redImg, trafficImg].forEach(img => {
+  img.onload = () => {
+    loaded++;
+    if (loaded === 3) gameLoop();
+  };
+});

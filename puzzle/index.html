@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Number Puzzle Game</title>
+<style>
+  body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: system-ui, sans-serif;
+    background: linear-gradient(135deg,#0099ff,#0033cc);
+    color: #fff;
+  }
+  h1 { margin: 0 0 10px; }
+  #info {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  #timer, #score { font-weight: 600; }
+  button {
+    background:#fff;
+    color:#0033cc;
+    border:none;
+    border-radius:6px;
+    padding:8px 16px;
+    cursor:pointer;
+  }
+  button:hover { background:#eef; }
+  #board {
+    display:grid;
+    grid-template-columns:repeat(4,80px);
+    grid-template-rows:repeat(4,80px);
+    gap:8px;
+  }
+  .tile {
+    background:rgba(255,255,255,0.25);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    font-weight:bold;
+    border-radius:8px;
+    cursor:pointer;
+    transition:background 0.2s;
+  }
+  .tile:hover { background:rgba(255,255,255,0.4); }
+  .empty {
+    background:transparent;
+    cursor:default;
+  }
+</style>
+</head>
+<body>
+ 
+<h1>Number Puzzle Game</h1>
+<div id="info">
+<div>Time: <span id="timer">03:00</span></div>
+<div>Score: <span id="score">0</span></div>
+<button id="restart">Restart</button>
+<button id="giveup">Give Up</button>
+</div>
+<div id="board"></div>
+ 
+<script>
+const board = document.getElementById("board");
+const timerEl = document.getElementById("timer");
+const scoreEl = document.getElementById("score");
+const restartBtn = document.getElementById("restart");
+const giveupBtn = document.getElementById("giveup");
+ 
+let tiles = [];
+let emptyIndex;
+let timeLeft = 180;
+let timer;
+let score = 0;
+let gameActive = true;
+ 
+// --- helpers ----------------------------------------------------
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+}
+function validMoves(empty){
+  const moves=[];
+  const r=Math.floor(empty/4), c=empty%4;
+  if(r>0) moves.push(empty-4);
+  if(r<3) moves.push(empty+4);
+  if(c>0) moves.push(empty-1);
+  if(c<3) moves.push(empty+1);
+  return moves;
+}
+function calcScore(){
+  let correct=0;
+  for(let i=0;i<15;i++){
+    if(tiles[i]===i+1) correct++;
+  }
+  return correct*10;
+}
+function formatTime(t){
+  const m=Math.floor(t/60);
+  const s=t%60;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+ 
+// --- game core --------------------------------------------------
+function render(){
+  board.innerHTML="";
+  tiles.forEach((val,i)=>{
+    const div=document.createElement("div");
+    div.className="tile"+(val===""?" empty":"");
+    div.textContent=val;
+    if(val!=="" && gameActive) div.onclick=()=>move(i);
+    board.appendChild(div);
+  });
+  score=calcScore();
+  scoreEl.textContent=score;
+}
+function move(i){
+  if(validMoves(emptyIndex).includes(i)){
+    [tiles[i],tiles[emptyIndex]]=[tiles[emptyIndex],tiles[i]];
+    emptyIndex=i;
+    render();
+    checkWin();
+  }
+}
+function checkWin(){
+  const goal=[...Array(15).keys()].map(x=>x+1).concat("");
+  if(JSON.stringify(tiles)===JSON.stringify(goal)){
+    clearInterval(timer);
+    gameActive=false;
+    alert(`🎉 You win! Score: ${score}`);
+  }
+}
+function startTimer(){
+  clearInterval(timer);
+  timeLeft=180;
+  timerEl.textContent=formatTime(timeLeft);
+  timer=setInterval(()=>{
+    timeLeft--;
+    timerEl.textContent=formatTime(timeLeft);
+    if(timeLeft<=0){
+      clearInterval(timer);
+      gameActive=false;
+      alert(`⏰ Time's up! Score: ${score}`);
+    }
+  },1000);
+}
+function init(){
+  tiles=[...Array(15).keys()].map(x=>x+1);
+  tiles.push("");
+  shuffle(tiles);
+  emptyIndex=tiles.indexOf("");
+  gameActive=true;
+  render();
+  startTimer();
+}
+ 
+// --- give up ----------------------------------------------------
+function giveUp(){
+  if(!gameActive) return;
+  clearInterval(timer);
+  gameActive=false;
+  // show solved puzzle
+  tiles=[...Array(15).keys()].map(x=>x+1);
+  tiles.push("");
+  emptyIndex=15;
+  render();
+  alert("You gave up! Here’s the solution shown on screen.");
+}
+ 
+// --- buttons ----------------------------------------------------
+restartBtn.onclick=init;
+giveupBtn.onclick=giveUp;
+ 
+// --- start ------------------------------------------------------
+init();
+</script>
+ 
+</body>
+</html>
