@@ -7,185 +7,274 @@
 <style>
   body {
     margin: 0;
-    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: #fff;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-family: system-ui, sans-serif;
-    background: linear-gradient(135deg,#0099ff,#0033cc);
-    color: #fff;
+    height: 100vh;
   }
-  h1 { margin: 0 0 10px; }
-  #info {
-    display: flex;
-    gap: 1.5rem;
-    align-items: center;
-    margin-bottom: 1rem;
-    flex-wrap: wrap;
-    justify-content: center;
+ 
+  h1 {
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
   }
-  #timer, #score { font-weight: 600; }
-  button {
-    background:#fff;
-    color:#0033cc;
-    border:none;
-    border-radius:6px;
-    padding:8px 16px;
-    cursor:pointer;
+ 
+  #game-container {
+    background: rgba(255,255,255,0.1);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.3);
+    display: inline-block;
   }
-  button:hover { background:#eef; }
-  #board {
-    display:grid;
-    grid-template-columns:repeat(4,80px);
-    grid-template-rows:repeat(4,80px);
-    gap:8px;
+ 
+  #puzzle {
+    display: grid;
+    grid-template-columns: repeat(4, 80px);
+    grid-template-rows: repeat(4, 80px);
+    gap: 8px;
   }
+ 
   .tile {
-    background:rgba(255,255,255,0.25);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:24px;
-    font-weight:bold;
-    border-radius:8px;
-    cursor:pointer;
-    transition:background 0.2s;
+    width: 80px;
+    height: 80px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    font-size: 28px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
   }
-  .tile:hover { background:rgba(255,255,255,0.4); }
+ 
+  .tile:hover {
+    background: rgba(255,255,255,0.4);
+    transform: scale(1.05);
+  }
+ 
   .empty {
-    background:transparent;
-    cursor:default;
+    background: transparent;
+    cursor: default;
+  }
+ 
+  #controls {
+    margin-top: 15px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+  }
+ 
+  button {
+    background: #ff9800;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    padding: 10px 18px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+ 
+  button:hover {
+    background: #ffc107;
+    transform: scale(1.05);
+  }
+ 
+  #timer-container {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+ 
+  #timer-input {
+    width: 100px;
+    padding: 6px;
+    border-radius: 5px;
+    border: none;
+    text-align: center;
+    font-size: 16px;
+    margin-bottom: 5px;
+  }
+ 
+  #timer {
+    font-size: 18px;
+    font-weight: bold;
+  }
+ 
+  #message {
+    margin-top: 10px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #ffeb3b;
   }
 </style>
 </head>
 <body>
  
 <h1>Number Puzzle Game</h1>
-<div id="info">
-<div>Time: <span id="timer">03:00</span></div>
-<div>Score: <span id="score">0</span></div>
-<button id="restart">Restart</button>
-<button id="giveup">Give Up</button>
+<div id="game-container">
+<div id="puzzle"></div>
+ 
+  <div id="timer-container">
+<input type="number" id="timer-input" placeholder="Minutes" min="0">
+<button id="setTimerBtn">Start Game</button>
+<div id="timer">No timer set</div>
 </div>
-<div id="board"></div>
+ 
+  <div id="controls">
+<button id="restartBtn">Restart</button>
+<button id="giveUpBtn">Give Up</button>
+</div>
+ 
+  <div id="message"></div>
+</div>
+ 
+<audio id="moveSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_1b5d7a3c52.mp3?filename=click-124467.mp3"&g…
+<audio id="winSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_9fcd22e63e.mp3?filename=success-1-6297.mp3"…
+<audio id="loseSound" src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_238e4636c1.mp3?filename=negative_beeps-6008…
  
 <script>
-const board = document.getElementById("board");
-const timerEl = document.getElementById("timer");
-const scoreEl = document.getElementById("score");
-const restartBtn = document.getElementById("restart");
-const giveupBtn = document.getElementById("giveup");
+const puzzle = document.getElementById('puzzle');
+const restartBtn = document.getElementById('restartBtn');
+const giveUpBtn = document.getElementById('giveUpBtn');
+const setTimerBtn = document.getElementById('setTimerBtn');
+const timerInput = document.getElementById('timer-input');
+const timerDisplay = document.getElementById('timer');
+const message = document.getElementById('message');
+const moveSound = document.getElementById('moveSound');
+const winSound = document.getElementById('winSound');
+const loseSound = document.getElementById('loseSound');
  
 let tiles = [];
-let emptyIndex;
-let timeLeft = 180;
-let timer;
-let score = 0;
-let gameActive = true;
+let emptyIndex = 15;
+let totalTime = 0;
+let timeLeft = 0;
+let timer = null;
  
-// --- helpers ----------------------------------------------------
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-}
-function validMoves(empty){
-  const moves=[];
-  const r=Math.floor(empty/4), c=empty%4;
-  if(r>0) moves.push(empty-4);
-  if(r<3) moves.push(empty+4);
-  if(c>0) moves.push(empty-1);
-  if(c<3) moves.push(empty+1);
-  return moves;
-}
-function calcScore(){
-  let correct=0;
-  for(let i=0;i<15;i++){
-    if(tiles[i]===i+1) correct++;
-  }
-  return correct*10;
-}
-function formatTime(t){
-  const m=Math.floor(t/60);
-  const s=t%60;
-  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
-}
+function createPuzzle() {
+  puzzle.innerHTML = '';
+  let numbers = [...Array(15).keys()].map(n => n + 1);
+  shuffleArray(numbers);
+  numbers.push('');
+  tiles = numbers;
  
-// --- game core --------------------------------------------------
-function render(){
-  board.innerHTML="";
-  tiles.forEach((val,i)=>{
-    const div=document.createElement("div");
-    div.className="tile"+(val===""?" empty":"");
-    div.textContent=val;
-    if(val!=="" && gameActive) div.onclick=()=>move(i);
-    board.appendChild(div);
+  tiles.forEach((num, i) => {
+    const div = document.createElement('div');
+    div.className = 'tile' + (num === '' ? ' empty' : '');
+    div.textContent = num;
+    div.addEventListener('click', () => moveTile(i));
+    puzzle.appendChild(div);
   });
-  score=calcScore();
-  scoreEl.textContent=score;
+  emptyIndex = tiles.indexOf('');
 }
-function move(i){
-  if(validMoves(emptyIndex).includes(i)){
-    [tiles[i],tiles[emptyIndex]]=[tiles[emptyIndex],tiles[i]];
-    emptyIndex=i;
-    render();
+ 
+function shuffleArray(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+ 
+function moveTile(index) {
+  const row = Math.floor(index / 4);
+  const col = index % 4;
+  const emptyRow = Math.floor(emptyIndex / 4);
+  const emptyCol = emptyIndex % 4;
+ 
+  if (Math.abs(row - emptyRow) + Math.abs(col - emptyCol) === 1) {
+    [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+    emptyIndex = index;
+    moveSound.play();
+    renderPuzzle();
     checkWin();
   }
 }
-function checkWin(){
-  const goal=[...Array(15).keys()].map(x=>x+1).concat("");
-  if(JSON.stringify(tiles)===JSON.stringify(goal)){
+ 
+function renderPuzzle() {
+  const tileDivs = puzzle.querySelectorAll('.tile');
+  tileDivs.forEach((div, i) => {
+    div.textContent = tiles[i];
+    div.className = 'tile' + (tiles[i] === '' ? ' empty' : '');
+  });
+}
+ 
+function checkWin() {
+  const correct = [...Array(15).keys()].map(n => n + 1).concat('');
+  if (JSON.stringify(tiles) === JSON.stringify(correct)) {
     clearInterval(timer);
-    gameActive=false;
-    alert(`🎉 You win! Score: ${score}`);
+    winSound.play();
+    message.textContent = "🎉 You solved it! Congratulations!";
   }
 }
-function startTimer(){
+ 
+function restartGame() {
   clearInterval(timer);
-  timeLeft=180;
-  timerEl.textContent=formatTime(timeLeft);
-  timer=setInterval(()=>{
-    timeLeft--;
-    timerEl.textContent=formatTime(timeLeft);
-    if(timeLeft<=0){
-      clearInterval(timer);
-      gameActive=false;
-      alert(`⏰ Time's up! Score: ${score}`);
+  message.textContent = '';
+  if (totalTime > 0) {
+    timeLeft = totalTime;
+    startTimer();
+  } else {
+    timerDisplay.textContent = 'No timer set';
+  }
+  createPuzzle();
+}
+ 
+function giveUp() {
+  clearInterval(timer);
+  loseSound.play();
+  message.textContent = "😔 Here's the correct order!";
+  tiles = [...Array(15).keys()].map(n => n + 1).concat('');
+  emptyIndex = 15;
+  renderPuzzle();
+}
+ 
+function setTimer() {
+  clearInterval(timer);
+  message.textContent = '';
+  const minutes = parseInt(timerInput.value);
+  if (isNaN(minutes) || minutes <= 0) {
+    totalTime = 0;
+    timerDisplay.textContent = "No time limit!";
+  } else {
+    totalTime = minutes * 60;
+    timeLeft = totalTime;
+    startTimer();
+  }
+  createPuzzle();
+}
+ 
+function startTimer() {
+  clearInterval(timer);
+  timer = setInterval(() => {
+    if (totalTime === 0) {
+      timerDisplay.textContent = "No time limit!";
+      return;
     }
-  },1000);
-}
-function init(){
-  tiles=[...Array(15).keys()].map(x=>x+1);
-  tiles.push("");
-  shuffle(tiles);
-  emptyIndex=tiles.indexOf("");
-  gameActive=true;
-  render();
-  startTimer();
-}
  
-// --- give up ----------------------------------------------------
-function giveUp(){
-  if(!gameActive) return;
-  clearInterval(timer);
-  gameActive=false;
-  // show solved puzzle
-  tiles=[...Array(15).keys()].map(x=>x+1);
-  tiles.push("");
-  emptyIndex=15;
-  render();
-  alert("You gave up! Here’s the solution shown on screen.");
+    timeLeft--;
+    const min = Math.floor(timeLeft / 60);
+    const sec = timeLeft % 60;
+    timerDisplay.textContent = `Time left: ${min}:${sec < 10 ? '0' : ''}${sec}`;
+ 
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      loseSound.play();
+      message.textContent = "⏰ Time's up! You lost!";
+    }
+  }, 1000);
 }
  
-// --- buttons ----------------------------------------------------
-restartBtn.onclick=init;
-giveupBtn.onclick=giveUp;
+setTimerBtn.addEventListener('click', setTimer);
+restartBtn.addEventListener('click', restartGame);
+giveUpBtn.addEventListener('click', giveUp);
  
-// --- start ------------------------------------------------------
-init();
+// initialize puzzle on load
+createPuzzle();
 </script>
- 
 </body>
 </html>
