@@ -19,3 +19,21 @@
   <script src="game.js"></script>
 </body>
 </html>
+// ===== keyboard handling =====
+const keys = {};
+
+function handleKeyDown(e) {
+  keys[e.key.toLowerCase()] = true;
+}
+
+function handleKeyUp(e) {
+  keys[e.key.toLowerCase()] = false;
+}
+
+// Add keyboard listeners to the window, not the document
+window.addEventListener("keydown", handleKeyDown);
+window.addEventListener("keyup", handleKeyUp);
+
+// Always keep focus on the window
+window.addEventListener("click", () => window.focus());
+window.focus();
