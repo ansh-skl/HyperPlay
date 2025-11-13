@@ -1,39 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Road Rivals</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <canvas id="gameCanvas"></canvas>
+  <!-- ====== HEADS-UP DISPLAY ====== -->
   <div id="hud">
-    <div id="stats">
-      <p>🔵 Blue Lives: <span id="blueLives">3</span></p>
-      <p>🔴 Red Lives: <span id="redLives">3</span></p>
-      <p>🏁 Level: <span id="level">1</span></p>
-    </div>
-    <div id="message"></div>
+    <span>🏁 Level: <span id="level">1</span></span> |
+    <span>🔵 Blue Lives: <span id="blueLives">3</span></span> |
+    <span>🔴 Red Lives: <span id="redLives">3</span></span>
   </div>
+
+  <!-- ====== GAME CANVAS ====== -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- ====== GAME MESSAGE / END SCREEN ====== -->
+  <div id="message"></div>
+
+  <!-- ====== SCRIPTS ====== -->
   <script src="game.js"></script>
 </body>
 </html>
-// ===== keyboard handling =====
-const keys = {};
-
-function handleKeyDown(e) {
-  keys[e.key.toLowerCase()] = true;
-}
-
-function handleKeyUp(e) {
-  keys[e.key.toLowerCase()] = false;
-}
-
-// Add keyboard listeners to the window, not the document
-window.addEventListener("keydown", handleKeyDown);
-window.addEventListener("keyup", handleKeyUp);
-
-// Always keep focus on the window
-window.addEventListener("click", () => window.focus());
-window.focus();

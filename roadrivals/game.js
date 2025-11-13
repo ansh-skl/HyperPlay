@@ -1,4 +1,3 @@
-// ===== SETUP =====
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -16,6 +15,17 @@ window.addEventListener("resize", () => {
   resetPlayers();
 });
 
+const keys = {};
+window.addEventListener("keydown", e => {
+  keys[e.key.toLowerCase()] = true;
+});
+window.addEventListener("keyup", e => {
+  keys[e.key.toLowerCase()] = false;
+});
+window.addEventListener("click", () => window.focus());
+window.focus();
+
+// ====== VARIABLES ======
 let level = 1;
 let speed = 5;
 let roadY = 0;
@@ -23,34 +33,21 @@ let blueLives = 3;
 let redLives = 3;
 let finished = false;
 let traffic = [];
-const keys = {};
 
-window.focus(); // ensure the canvas gets keyboard focus
-
-document.addEventListener("keydown", e => {
-  keys[e.key.toLowerCase()] = true;
-});
-document.addEventListener("keyup", e => {
-  keys[e.key.toLowerCase()] = false;
-});
-
-// ===== ROAD =====
+// ====== ROAD ======
 const lanes = 4;
 let laneWidth, roadWidth, roadX;
 
 function setupRoad() {
-  laneWidth = width / 2.5 / lanes;
+  laneWidth = width / 3 / lanes;
   roadWidth = laneWidth * lanes;
   roadX = (width - roadWidth) / 2;
 }
 setupRoad();
 
-// ===== PLAYERS =====
-const blue = { x: 0, y: 0, w: 60, h: 100, img: new Image() };
-const red = { x: 0, y: 0, w: 60, h: 100, img: new Image() };
-
-blue.img.src = "https://opengameart.org/sites/default/files/car-blue.png";
-red.img.src = "https://opengameart.org/sites/default/files/car-red.png";
+// ====== PLAYERS ======
+const blue = { x: 0, y: 0, w: 60, h: 100, color: "#00aaff" };
+const red = { x: 0, y: 0, w: 60, h: 100, color: "#ff4444" };
 
 function resetPlayers() {
   blue.x = roadX + laneWidth * 1 - blue.w / 2;
@@ -60,7 +57,7 @@ function resetPlayers() {
 }
 resetPlayers();
 
-// ===== TRAFFIC =====
+// ====== TRAFFIC ======
 function resetTraffic() {
   traffic = [];
   for (let i = 0; i < 5 + level * 2; i++) {
@@ -69,30 +66,24 @@ function resetTraffic() {
       y: Math.random() * -3000,
       w: 60,
       h: 100,
-      img: new Image()
+      color: ["#666", "#888", "#aaa"][Math.floor(Math.random() * 3)]
     };
-    car.img.src = "https://opengameart.org/sites/default/files/car-gray.png";
     car.x = roadX + car.lane * laneWidth + laneWidth / 2 - car.w / 2;
     traffic.push(car);
   }
 }
 resetTraffic();
 
-// ===== GAME LOGIC =====
+// ====== GAME LOGIC ======
 function movePlayer(p, up, down, left, right) {
-  if (keys[up]) p.y -= 8;
-  if (keys[down]) p.y += 8;
-  if (keys[left]) p.x -= 8;
-  if (keys[right]) p.x += 8;
+  if (keys[up]) p.y -= 7;
+  if (keys[down]) p.y += 7;
+  if (keys[left]) p.x -= 7;
+  if (keys[right]) p.x += 7;
 }
 
 function collide(a, b) {
-  return !(
-    a.x + a.w < b.x ||
-    a.x > b.x + b.w ||
-    a.y + a.h < b.y ||
-    a.y > b.y + b.h
-  );
+  return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
 }
 
 function checkBoundaries(p, isBlue) {
@@ -137,13 +128,9 @@ window.restartGame = function () {
   gameLoop();
 };
 
-// ===== DRAWING =====
+// ====== DRAWING ======
 function drawRoad() {
-  const g = ctx.createLinearGradient(roadX, 0, roadX + roadWidth, 0);
-  g.addColorStop(0, "#222");
-  g.addColorStop(0.5, "#333");
-  g.addColorStop(1, "#222");
-  ctx.fillStyle = g;
+  ctx.fillStyle = "#222";
   ctx.fillRect(roadX, 0, roadWidth, height);
 
   ctx.strokeStyle = "white";
@@ -160,10 +147,13 @@ function drawRoad() {
 }
 
 function drawCar(p) {
-  ctx.drawImage(p.img, p.x, p.y, p.w, p.h);
+  ctx.fillStyle = p.color;
+  ctx.fillRect(p.x, p.y, p.w, p.h);
+  ctx.fillStyle = "#111";
+  ctx.fillRect(p.x + 10, p.y + 10, p.w - 20, p.h - 20);
 }
 
-// ===== MAIN LOOP =====
+// ====== GAME LOOP ======
 function gameLoop() {
   if (finished) return;
   ctx.clearRect(0, 0, width, height);
@@ -182,7 +172,8 @@ function gameLoop() {
       car.lane = Math.floor(Math.random() * lanes);
       car.x = roadX + car.lane * laneWidth + laneWidth / 2 - car.w / 2;
     }
-    ctx.drawImage(car.img, car.x, car.y, car.w, car.h);
+    ctx.fillStyle = car.color;
+    ctx.fillRect(car.x, car.y, car.w, car.h);
 
     if (collide(blue, car)) { blueLives--; updateLives(); resetRound(); }
     if (collide(red, car)) { redLives--; updateLives(); resetRound(); }
@@ -206,3 +197,4 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+gameLoop();
