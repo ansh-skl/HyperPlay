@@ -4,23 +4,103 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Road Rivals</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #111, #000);
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: #111;
+      border: 2px solid #0ff;
+      box-shadow: 0 0 20px #0ff;
+    }
+  </style>
 </head>
 <body>
-  <!-- ====== HEADS-UP DISPLAY ====== -->
-  <div id="hud">
-    <span>🏁 Level: <span id="level">1</span></span> |
-    <span>🔵 Blue Lives: <span id="blueLives">3</span></span> |
-    <span>🔴 Red Lives: <span id="redLives">3</span></span>
-  </div>
-
-  <!-- ====== GAME CANVAS ====== -->
   <canvas id="gameCanvas"></canvas>
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-  <!-- ====== GAME MESSAGE / END SCREEN ====== -->
-  <div id="message"></div>
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
 
-  <!-- ====== SCRIPTS ====== -->
-  <script src="game.js"></script>
+    const carImage = new Image();
+    carImage.src = "https://i.imgur.com/HzN9T5Z.png";
+
+    const enemyCarImage = new Image();
+    enemyCarImage.src = "https://i.imgur.com/V3r1m9K.png";
+
+    const trackImage = new Image();
+    trackImage.src = "https://i.imgur.com/gPdqz7u.png";
+
+    let player = { x: width / 2 - 25, y: height - 150, w: 50, h: 100 };
+    let enemies = [];
+    let speed = 5;
+    let gameOver = false;
+
+    function spawnEnemy() {
+      const lane = Math.floor(Math.random() * 4);
+      enemies.push({
+        x: lane * (width / 4) + width / 8 - 25,
+        y: -120,
+        w: 50,
+        h: 100
+      });
+    }
+
+    function draw() {
+      ctx.drawImage(trackImage, 0, 0, width, height);
+      ctx.drawImage(carImage, player.x, player.y, player.w, player.h);
+
+      enemies.forEach((enemy) => {
+        ctx.drawImage(enemyCarImage, enemy.x, enemy.y, enemy.w, enemy.h);
+      });
+    }
+
+    function update() {
+      if (gameOver) return;
+      enemies.forEach((enemy) => {
+        enemy.y += speed;
+        if (enemy.y > height) {
+          enemies.splice(enemies.indexOf(enemy), 1);
+          spawnEnemy();
+        }
+
+        if (
+          player.x < enemy.x + enemy.w &&
+          player.x + player.w > enemy.x &&
+          player.y < enemy.y + enemy.h &&
+          player.y + player.h > enemy.y
+        ) {
+          gameOver = true;
+          alert("💥 Crash! Game Over!");
+          document.location.reload();
+        }
+      });
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, width, height);
+      draw();
+      update();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft" && player.x > 0) player.x -= 100;
+      if (e.key === "ArrowRight" && player.x < width - player.w) player.x += 100;
+    });
+
+    window.onload = () => {
+      spawnEnemy();
+      gameLoop();
+    };
+  </script>
 </body>
 </html>
